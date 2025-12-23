@@ -1,8 +1,8 @@
-export function createId() {
-  return crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function createId() {
+  return crypto && crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function debounce(fn, delay) {
+function debounce(fn, delay) {
   let timeoutId;
   return function (...args) {
     clearTimeout(timeoutId);
@@ -10,14 +10,14 @@ export function debounce(fn, delay) {
   };
 }
 
-export function formatDate(dateStr) {
+function formatDate(dateStr) {
   if (!dateStr) return "No due date";
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return "No due date";
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function reorderById(list, fromId, toId) {
+function reorderById(list, fromId, toId) {
   const copy = [...list];
   const fromIndex = copy.findIndex((t) => t.id === fromId);
   if (fromIndex === -1) return list;
@@ -37,4 +37,11 @@ export function reorderById(list, fromId, toId) {
   copy.splice(toIndex, 0, item);
   return copy;
 }
+
+window.utils = {
+  createId,
+  debounce,
+  formatDate,
+  reorderById,
+};
 

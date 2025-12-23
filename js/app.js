@@ -1,6 +1,23 @@
-import { loadTasks, saveTasks, loadTheme, saveTheme, exportTasks } from "./storage.js";
-import { renderTasks, updateStats, setFilterActive, applyTheme } from "./ui.js";
-import { createId, reorderById, debounce } from "./utils.js";
+const storage = window.storage || {
+  loadTasks: () => [],
+  saveTasks: () => {},
+  loadTheme: () => "light",
+  saveTheme: () => {},
+  exportTasks: () => {},
+};
+
+const ui = window.ui || {
+  renderTasks: () => {},
+  updateStats: () => {},
+  setFilterActive: () => {},
+  applyTheme: (t) => document.body.classList.add(`theme-${t}`),
+};
+
+const utils = window.utils || {
+  createId: () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  reorderById: (list) => list,
+  debounce: (fn) => fn,
+};
 
 const state = {
   tasks: [],
@@ -43,9 +60,9 @@ const els = {
 };
 
 function init() {
-  state.tasks = loadTasks();
-  state.theme = loadTheme();
-  applyTheme(state.theme);
+  state.tasks = storage.loadTasks();
+  state.theme = storage.loadTheme();
+  ui.applyTheme(state.theme);
   updateThemeButton();
   render();
   bindEvents();
@@ -63,7 +80,7 @@ function bindEvents() {
   els.filters.forEach((btn) =>
     btn.addEventListener("click", () => {
       state.filter = btn.dataset.filter;
-      setFilterActive(els.filters, state.filter);
+      ui.setFilterActive(els.filters, state.filter);
       render();
     })
   );
@@ -75,7 +92,7 @@ function bindEvents() {
     });
   }
 
-  els.search.addEventListener("input", debounce((e) => {
+  els.search.addEventListener("input", utils.debounce((e) => {
     state.search = e.target.value.toLowerCase();
     render();
   }, 300));
@@ -88,12 +105,12 @@ function bindEvents() {
 
   els.themeToggle.addEventListener("click", () => {
     state.theme = state.theme === "light" ? "dark" : "light";
-    applyTheme(state.theme);
-    saveTheme(state.theme);
+    ui.applyTheme(state.theme);
+    storage.saveTheme(state.theme);
     updateThemeButton();
   });
 
-  els.exportBtn.addEventListener("click", () => exportTasks(state.tasks));
+  els.exportBtn.addEventListener("click", () => storage.exportTasks(state.tasks));
   els.importInput.addEventListener("change", handleImport);
 
   // Modal handlers
@@ -108,7 +125,12 @@ function bindEvents() {
   }
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && els.modal && els.modal.open) closeModal();
+    if (
+      e.key === "Escape" &&
+      els.modal &&
+      (els.modal.open || els.modal.getAttribute && els.modal.getAttribute("data-open") === "true")
+    )
+      closeModal();
     if (e.key === "/" && document.activeElement !== els.search) {
       e.preventDefault();
       els.search.focus();
@@ -125,7 +147,7 @@ function handleSubmit(e) {
   if (!title) return;
 
   const task = {
-    id: createId(),
+    id: utils.createId(),
     title,
     completed: false,
     dueDate: els.dueInput.value || null,
@@ -207,7 +229,7 @@ function handleDrop(e) {
   const toId = overItem ? overItem.dataset.id : null;
   if (!fromId || fromId === toId) return;
 
-  state.tasks = reorderById(state.tasks, fromId, toId);
+  state.tasks = utils.reorderById(state.tasks, fromId, toId);
   // normalize order
   state.tasks = state.tasks.map((t, idx) => ({ ...t, order: idx }));
   persist();
@@ -229,11 +251,22 @@ function openModal(taskId) {
   if (els.modalPriority) els.modalPriority.value = task.priority || "medium";
   if (els.modalCompleted) els.modalCompleted.checked = task.completed;
 
-  els.modal.showModal();
+  if (typeof els.modal.showModal === "function") {
+    els.modal.showModal();
+  } else {
+    els.modal.setAttribute("data-open", "true");
+    els.modal.style.display = "block";
+  }
 }
 
 function closeModal() {
-  if (els.modal) els.modal.close();
+  if (els.modal) {
+    if (typeof els.modal.close === "function") els.modal.close();
+    else {
+      els.modal.removeAttribute("data-open");
+      els.modal.style.display = "none";
+    }
+  }
   state.currentModalTaskId = null;
 }
 
@@ -281,7 +314,7 @@ function handleImport(e) {
       const parsed = JSON.parse(reader.result);
       if (!Array.isArray(parsed)) throw new Error("Invalid file");
       state.tasks = parsed.map((t, idx) => ({
-        id: t.id ?? createId(),
+        id: t.id ?? utils.createId(),
         title: t.title ?? "Untitled task",
         completed: Boolean(t.completed),
         dueDate: t.dueDate ?? null,
@@ -343,14 +376,14 @@ function getVisibleTasks() {
 
 function render() {
   const visible = getVisibleTasks();
-  renderTasks(els.list, visible);
-  updateStats(els.stats, state.tasks);
+  ui.renderTasks(els.list, visible);
+  ui.updateStats(els.stats, state.tasks);
   els.empty.style.display = state.tasks.length ? "none" : "block";
-  setFilterActive(els.filters, state.filter);
+  ui.setFilterActive(els.filters, state.filter);
 }
 
 function persist() {
-  saveTasks(state.tasks);
+  storage.saveTasks(state.tasks);
 }
 
 function updateThemeButton() {

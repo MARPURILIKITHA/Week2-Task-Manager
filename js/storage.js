@@ -1,7 +1,7 @@
 const TASKS_KEY = "tm_tasks";
 const THEME_KEY = "tm_theme";
 
-export function loadTasks() {
+function loadTasks() {
   try {
     const raw = localStorage.getItem(TASKS_KEY);
     if (!raw) return [];
@@ -22,7 +22,7 @@ export function loadTasks() {
   }
 }
 
-export function saveTasks(tasks) {
+function saveTasks(tasks) {
   try {
     localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
   } catch (err) {
@@ -30,15 +30,15 @@ export function saveTasks(tasks) {
   }
 }
 
-export function loadTheme() {
+function loadTheme() {
   return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
 }
 
-export function saveTheme(theme) {
+function saveTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
 }
 
-export function exportTasks(tasks) {
+function exportTasks(tasks) {
   const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -47,4 +47,12 @@ export function exportTasks(tasks) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+window.storage = {
+  loadTasks,
+  saveTasks,
+  loadTheme,
+  saveTheme,
+  exportTasks,
+};
 

@@ -1,6 +1,4 @@
-import { formatDate } from "./utils.js";
-
-export function renderTasks(listEl, tasks) {
+function renderTasks(listEl, tasks) {
   listEl.innerHTML = "";
   const fragment = document.createDocumentFragment();
 
@@ -33,7 +31,8 @@ export function renderTasks(listEl, tasks) {
 
     const due = document.createElement("span");
     due.className = "badge";
-    due.textContent = `Due: ${formatDate(task.dueDate)}`;
+    const fmt = window.utils && window.utils.formatDate ? window.utils.formatDate : () => "No due date";
+    due.textContent = `Due: ${fmt(task.dueDate)}`;
 
     const created = document.createElement("span");
     created.className = "badge";
@@ -72,7 +71,7 @@ export function renderTasks(listEl, tasks) {
   listEl.appendChild(fragment);
 }
 
-export function updateStats({ totalEl, activeEl, completedEl }, tasks) {
+function updateStats({ totalEl, activeEl, completedEl }, tasks) {
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
   const active = total - completed;
@@ -81,14 +80,21 @@ export function updateStats({ totalEl, activeEl, completedEl }, tasks) {
   completedEl.textContent = `${completed} completed`;
 }
 
-export function setFilterActive(buttons, filter) {
+function setFilterActive(buttons, filter) {
   buttons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.filter === filter);
   });
 }
 
-export function applyTheme(theme) {
+function applyTheme(theme) {
   document.body.classList.remove("theme-light", "theme-dark");
   document.body.classList.add(`theme-${theme}`);
 }
+
+window.ui = {
+  renderTasks,
+  updateStats,
+  setFilterActive,
+  applyTheme,
+};
 
