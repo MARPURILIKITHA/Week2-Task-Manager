@@ -22,7 +22,7 @@ export function renderTasks(listEl, tasks) {
     const title = document.createElement("p");
     title.className = "task-title" + (task.completed ? " completed" : "");
     title.textContent = task.title;
-    title.title = "Double-click to edit";
+    title.title = "Double-click to edit or click details button";
 
     const meta = document.createElement("div");
     meta.className = "meta";
@@ -37,9 +37,13 @@ export function renderTasks(listEl, tasks) {
 
     const created = document.createElement("span");
     created.className = "badge";
-    created.textContent = new Date(task.createdAt).toLocaleDateString();
+    created.textContent = new Date(task.createdAt).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
 
     meta.append(priority, due, created);
+
     content.append(title, meta);
 
     const actions = document.createElement("div");
@@ -55,7 +59,12 @@ export function renderTasks(listEl, tasks) {
     delBtn.title = "Delete task";
     delBtn.textContent = "🗑️";
 
-    actions.append(editBtn, delBtn);
+    const detailsBtn = document.createElement("button");
+    detailsBtn.className = "icon-button details";
+    detailsBtn.title = "View details";
+    detailsBtn.textContent = "ℹ️";
+
+    actions.append(detailsBtn, editBtn, delBtn);
     li.append(checkbox, content, actions);
     fragment.appendChild(li);
   });

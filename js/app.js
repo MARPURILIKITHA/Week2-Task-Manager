@@ -1,12 +1,14 @@
 import { loadTasks, saveTasks, loadTheme, saveTheme, exportTasks } from "./storage.js";
 import { renderTasks, updateStats, setFilterActive, applyTheme } from "./ui.js";
-import { createId, reorderById } from "./utils.js";
+import { createId, reorderById, debounce } from "./utils.js";
 
 const state = {
   tasks: [],
   filter: "all",
+  sort: "manual",
   search: "",
   theme: "light",
+  currentModalTaskId: null,
 };
 
 const els = {
@@ -18,6 +20,7 @@ const els = {
   empty: document.getElementById("emptyState"),
   filters: Array.from(document.querySelectorAll(".filter-button")),
   search: document.getElementById("searchInput"),
+  sort: document.getElementById("sortSelect"),
   stats: {
     totalEl: document.getElementById("totalCount"),
     activeEl: document.getElementById("activeCount"),
@@ -27,6 +30,16 @@ const els = {
   themeToggle: document.getElementById("themeToggle"),
   exportBtn: document.getElementById("exportBtn"),
   importInput: document.getElementById("importInput"),
+  // modal
+  modal: document.getElementById("taskModal"),
+  closeModalBtn: document.getElementById("closeModal"),
+  modalForm: document.getElementById("modalForm"),
+  modalTitle: document.getElementById("modalTitle"),
+  modalDueDate: document.getElementById("modalDueDate"),
+  modalPriority: document.getElementById("modalPriority"),
+  modalCompleted: document.getElementById("modalCompleted"),
+  deleteModalBtn: document.getElementById("deleteModalBtn"),
+  cancelModalBtn: document.getElementById("cancelModal"),
 };
 
 function init() {
@@ -55,10 +68,17 @@ function bindEvents() {
     })
   );
 
-  els.search.addEventListener("input", (e) => {
+  if (els.sort) {
+    els.sort.addEventListener("change", (e) => {
+      state.sort = e.target.value;
+      render();
+    });
+  }
+
+  els.search.addEventListener("input", debounce((e) => {
     state.search = e.target.value.toLowerCase();
     render();
-  });
+  }, 300));
 
   els.clearCompleted.addEventListener("click", () => {
     state.tasks = state.tasks.filter((t) => !t.completed);
@@ -76,7 +96,19 @@ function bindEvents() {
   els.exportBtn.addEventListener("click", () => exportTasks(state.tasks));
   els.importInput.addEventListener("change", handleImport);
 
+  // Modal handlers
+  if (els.closeModalBtn) els.closeModalBtn.addEventListener("click", closeModal);
+  if (els.cancelModalBtn) els.cancelModalBtn.addEventListener("click", closeModal);
+  if (els.modalForm) els.modalForm.addEventListener("submit", handleModalSave);
+  if (els.deleteModalBtn) els.deleteModalBtn.addEventListener("click", handleModalDelete);
+  if (els.modal) {
+    els.modal.addEventListener("click", (e) => {
+      if (e.target === els.modal) closeModal();
+    });
+  }
+
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && els.modal && els.modal.open) closeModal();
     if (e.key === "/" && document.activeElement !== els.search) {
       e.preventDefault();
       els.search.focus();
@@ -121,8 +153,8 @@ function handleListClick(e) {
     deleteTask(id);
   }
 
-  if (e.target.classList.contains("edit")) {
-    promptEdit(id);
+  if (e.target.classList.contains("edit") || e.target.classList.contains("details")) {
+    openModal(id);
   }
 }
 
@@ -130,7 +162,7 @@ function handleListDblClick(e) {
   const item = e.target.closest(".task-item");
   if (!item) return;
   if (!e.target.classList.contains("task-title")) return;
-  promptEdit(item.dataset.id);
+  openModal(item.dataset.id);
 }
 
 function toggleComplete(id, isComplete) {
@@ -141,18 +173,6 @@ function toggleComplete(id, isComplete) {
 
 function deleteTask(id) {
   state.tasks = state.tasks.filter((t) => t.id !== id);
-  persist();
-  render();
-}
-
-function promptEdit(id) {
-  const task = state.tasks.find((t) => t.id === id);
-  if (!task) return;
-  const nextTitle = prompt("Edit task", task.title);
-  if (!nextTitle) return;
-  const trimmed = nextTitle.trim();
-  if (!trimmed) return;
-  state.tasks = state.tasks.map((t) => (t.id === id ? { ...t, title: trimmed } : t));
   persist();
   render();
 }
@@ -199,6 +219,59 @@ function handleDragEnd() {
   if (dragging) dragging.classList.remove("dragging");
 }
 
+function openModal(taskId) {
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task || !els.modal) return;
+
+  state.currentModalTaskId = taskId;
+  if (els.modalTitle) els.modalTitle.value = task.title;
+  if (els.modalDueDate) els.modalDueDate.value = task.dueDate || "";
+  if (els.modalPriority) els.modalPriority.value = task.priority || "medium";
+  if (els.modalCompleted) els.modalCompleted.checked = task.completed;
+
+  els.modal.showModal();
+}
+
+function closeModal() {
+  if (els.modal) els.modal.close();
+  state.currentModalTaskId = null;
+}
+
+function handleModalSave(e) {
+  e.preventDefault();
+  const taskId = state.currentModalTaskId;
+  if (!taskId) return;
+
+  const newTitle = els.modalTitle?.value.trim();
+  if (!newTitle) {
+    alert("Task title cannot be empty");
+    return;
+  }
+
+  state.tasks = state.tasks.map((t) =>
+    t.id === taskId
+      ? {
+          ...t,
+          title: newTitle,
+          dueDate: els.modalDueDate?.value || null,
+          priority: els.modalPriority?.value || "medium",
+          completed: els.modalCompleted?.checked || false,
+        }
+      : t
+  );
+
+  persist();
+  closeModal();
+  render();
+}
+
+function handleModalDelete() {
+  const taskId = state.currentModalTaskId;
+  if (!taskId || !confirm("Delete this task?")) return;
+  deleteTask(taskId);
+  closeModal();
+}
+
 function handleImport(e) {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -228,14 +301,44 @@ function handleImport(e) {
 }
 
 function getVisibleTasks() {
-  return state.tasks
-    .filter((task) => {
-      if (state.filter === "active" && task.completed) return false;
-      if (state.filter === "completed" && !task.completed) return false;
-      if (state.search && !task.title.toLowerCase().includes(state.search)) return false;
-      return true;
-    })
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const filtered = state.tasks.filter((task) => {
+    if (state.filter === "active" && task.completed) return false;
+    if (state.filter === "completed" && !task.completed) return false;
+    if (state.search && !task.title.toLowerCase().includes(state.search)) return false;
+    if (state.tagFilter && !task.tags?.includes(state.tagFilter)) return false;
+    return true;
+  });
+
+  // sorting
+  if (state.sort === "newest") {
+    return filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  if (state.sort === "oldest") {
+    return filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  }
+
+  if (state.sort === "duedate") {
+    return filtered.sort((a, b) => {
+      const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      if (aTime === bTime) return (a.order ?? 0) - (b.order ?? 0);
+      return aTime - bTime;
+    });
+  }
+
+  if (state.sort === "priority") {
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    return filtered.sort((a, b) => {
+      const aPri = priorityOrder[a.priority] ?? 1;
+      const bPri = priorityOrder[b.priority] ?? 1;
+      if (aPri === bPri) return (a.order ?? 0) - (b.order ?? 0);
+      return aPri - bPri;
+    });
+  }
+
+  // default/manual: preserve custom order
+  return filtered.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 function render() {

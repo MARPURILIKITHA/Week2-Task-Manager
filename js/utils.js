@@ -2,6 +2,14 @@ export function createId() {
   return crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+export function debounce(fn, delay) {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
+
 export function formatDate(dateStr) {
   if (!dateStr) return "No due date";
   const date = new Date(dateStr);

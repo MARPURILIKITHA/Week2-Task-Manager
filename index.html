@@ -60,6 +60,16 @@
         <div class="search">
           <input id="searchInput" type="search" placeholder="Search tasks (press / to focus)">
         </div>
+        <div class="sort">
+          <label for="sortSelect">Sort</label>
+          <select id="sortSelect" aria-label="Sort tasks">
+            <option value="manual">Manual</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="duedate">Due date</option>
+            <option value="priority">Priority</option>
+          </select>
+        </div>
       </div>
       <div class="stats" aria-live="polite">
         <span id="totalCount">0 total</span>
@@ -77,6 +87,45 @@
   <footer class="app-footer">
     <p>Drag tasks to reorder • Keyboard: N to focus input, / to search</p>
   </footer>
+
+  <!-- Detail modal for viewing/editing full task -->
+  <dialog id="taskModal" class="task-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Task Details</h2>
+        <button type="button" id="closeModal" class="close-button" aria-label="Close">✕</button>
+      </div>
+      <form id="modalForm" class="modal-form">
+        <div class="field">
+          <label for="modalTitle">Title</label>
+          <input id="modalTitle" type="text" required>
+        </div>
+        <div class="field">
+          <label for="modalDueDate">Due date</label>
+          <input id="modalDueDate" type="date">
+        </div>
+        <div class="field">
+          <label for="modalPriority">Priority</label>
+          <select id="modalPriority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="modalCompleted">
+            <input id="modalCompleted" type="checkbox">
+            Completed
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="primary">Save</button>
+          <button type="button" id="deleteModalBtn" class="danger">Delete</button>
+          <button type="button" id="cancelModal" class="ghost-button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
 
   <script type="module" src="js/app.js"></script>
 </body>

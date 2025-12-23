@@ -253,6 +253,8 @@ button:active {
   gap: 10px;
   color: var(--muted);
   font-size: 13px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .badge {
@@ -342,5 +344,100 @@ button:active {
     width: 100%;
     justify-content: flex-start;
   }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search input {
+    min-width: 100%;
+  }
+}
+
+/* Dialog/Modal Styles */
+dialog.task-modal {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 20px 60px color-mix(in srgb, #000 20%, transparent);
+  max-width: 600px;
+  width: 90vw;
+}
+
+dialog.task-modal::backdrop {
+  background: color-mix(in srgb, #000 30%, transparent);
+}
+
+.modal-content {
+  padding: 28px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: var(--text);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.modal-actions button {
+  flex: 0 0 auto;
+  min-width: 80px;
+}
+
+.danger {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.danger:hover {
+  background: color-mix(in srgb, var(--danger) 25%, transparent);
 }
 
