@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Task Manager</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-light">
+  <header class="app-header">
+    <div class="title-block">
+      <h1>Interactive Task Manager</h1>
+      <p class="subtitle">Add, edit, complete, filter, reorder, and persist tasks</p>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="ghost-button" aria-label="Toggle theme">🌙 Dark</button>
+      <button id="exportBtn" class="ghost-button" aria-label="Export tasks">⬆️ Export</button>
+      <label class="file-button" for="importInput">⬇️ Import</label>
+      <input type="file" id="importInput" accept=".json" hidden>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel wide">
+      <form id="taskForm" autocomplete="off" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="taskInput">Task</label>
+            <input id="taskInput" name="task" type="text" placeholder="Add a new task..." required>
+            <small class="hint">Press Enter to add. Double-click a task to edit.</small>
+          </div>
+          <div class="field">
+            <label for="dueInput">Due date</label>
+            <input id="dueInput" name="due" type="date">
+          </div>
+          <div class="field">
+            <label for="prioritySelect">Priority</label>
+            <select id="prioritySelect" name="priority">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary">Add Task</button>
+            <button type="button" id="clearCompleted" class="ghost-button">Clear Completed</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel controls">
+      <div class="filters">
+        <div class="filter-group" role="group" aria-label="Filter tasks">
+          <button data-filter="all" class="filter-button active">All</button>
+          <button data-filter="active" class="filter-button">Active</button>
+          <button data-filter="completed" class="filter-button">Completed</button>
+        </div>
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="Search tasks (press / to focus)">
+        </div>
+      </div>
+      <div class="stats" aria-live="polite">
+        <span id="totalCount">0 total</span>
+        <span id="activeCount">0 active</span>
+        <span id="completedCount">0 completed</span>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <ul id="taskList" class="task-list" aria-live="polite"></ul>
+      <p id="emptyState" class="empty-state">No tasks yet. Add one above to get started.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Drag tasks to reorder • Keyboard: N to focus input, / to search</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
+
